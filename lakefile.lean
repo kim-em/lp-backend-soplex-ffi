@@ -14,7 +14,7 @@ require LPCore from git "https://github.com/kim-em/lp-core" @
   "60fca2313ea3be14f578258dc6390f2fa07b26e7"
 
 require LPTactic from git "https://github.com/kim-em/lp-tactic" @
-  "69e592fd6d00896eddde2f76674411267352cb5b"
+  "6190fbde9547d314157da5badcbf77493bd4e454"
 
 require SoplexFFI from git "https://github.com/kim-em/soplex-ffi" @
   "a1389a99c2345f9d72ffdc2941be350ad0f97fd7"
@@ -63,7 +63,7 @@ package LPBackendSoplexFFI where
 @[default_target]
 lean_lib LPBackendSoplexFFI where
   roots := #[`LPBackendSoplexFFI]
-  globs := #[`LPBackendSoplexFFI, `LPBackendSoplexFFI.Adapter]
+  globs := #[`LPBackendSoplexFFI, `LPBackendSoplexFFI.Adapter, `LPBackendSoplexFFI.Driver]
   precompileModules := !sanitizerEnabled
   moreLinkArgs := soplexFFIRuntimeLinkArgs
   -- Force `SoplexFFI`'s native build before this library's modules
