@@ -32,11 +32,60 @@ def sanitizerArgs : Array String :=
   else
     #[]
 
--- Lake dedupes packages at the workspace root, so when `LPBackendSoplexFFI`
--- is consumed as a transitive dependency, `SoplexFFI` is checked out as a
--- sibling under `<workspace>/.lake/packages/SoplexFFI`, *not* nested under
--- this package's own `.lake/packages/`. Reach it via `..`.
-def soplexFFIRoot : FilePath := __dir__ / ".." / "SoplexFFI"
+/-! ## Locating the `SoplexFFI` package directory
+
+The Windows link step names absolute paths to MinGW archives that
+`SoplexFFI` stages under its own `vendor/mingw-libs/`. `moreLinkArgs`
+is plain `Array String` evaluated at config-eval time, so we need the
+directory of the resolved `SoplexFFI` dependency before any build
+target runs. Lake exposes no config-eval API for that, so we infer it
+from `__dir__`.
+
+The previous lakefile assumed exactly one layout — that `SoplexFFI`
+was always our sibling at `__dir__/../SoplexFFI`. That holds when this
+package is a transitive git-dependency under another workspace (e.g.
+`kim-em/soplex`), where Lake checks both packages out under the
+meta-workspace root's `.lake/packages/`. It does **not** hold when
+this package builds as its own workspace root (the standalone CI
+added in 47d8258), where `SoplexFFI` is instead fetched under our
+own `.lake/packages/`. The original code broke Windows CI in the
+standalone case.
+
+We discriminate the two layouts by inspecting `__dir__`'s tail: if
+our parent dir is named `packages` and our grandparent is `.lake`,
+this package was fetched into `<workspace>/.lake/packages/<us>` and
+we're transitive; otherwise we treat ourselves as the workspace root.
+
+Known limitations (Lake configurations not covered):
+
+* **Local path dependencies.** If a meta-workspace requires this
+  checkout via `from "/some/local/path"`, `__dir__` is `/some/local/path`
+  and the heuristic falls through to the standalone branch — but
+  `SoplexFFI` lives at the meta-workspace's `.lake/packages/SoplexFFI`,
+  not under our local checkout.
+* **Custom `packagesDir`.** A workspace can override Lake's default
+  `.lake/packages` via `WorkspaceConfig.packagesDir`. With a non-default
+  name, the parent-component check no longer fires.
+
+Neither case is exercised by the CI jobs this PR is targeting
+(standalone build of this repo on Windows; consumption from
+`kim-em/soplex` via a git `require`). A more robust long-term fix is
+to push the MinGW archives into `SoplexFFI`'s `extern_lib`s and let
+Lake's `LeanExe.recBuildExe` propagate them via `transDeps.externLibs`
+to consuming executables, which would eliminate the need for this
+package to know `SoplexFFI`'s directory at all. See issue #1 for
+discussion. -/
+def soplexFFIRoot : FilePath :=
+  let here : FilePath := __dir__
+  let parent? : Option FilePath := FilePath.parent here
+  let grandparent? : Option FilePath := parent?.bind FilePath.parent
+  let isTransitive : Bool :=
+    parent?.bind FilePath.fileName == some "packages" &&
+    grandparent?.bind FilePath.fileName == some ".lake"
+  if isTransitive then
+    here / ".." / "SoplexFFI"
+  else
+    here / defaultPackagesDir / "SoplexFFI"
 
 def soplexFFIRuntimeLinkArgs : Array String :=
   if System.Platform.isOSX then
