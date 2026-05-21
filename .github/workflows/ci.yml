@@ -45,13 +45,10 @@ jobs:
       - run: lean --version
       - run: lake build
 
-  # Standalone Windows build. The expected outcome on first run is
-  # red: `lakefile.lean` reconstructs the SoPlexFFI runtime archive
-  # path via `__dir__ / ".." / "SoplexFFI"`, which works when this
-  # package is a transitive dep of `kim-em/soplex` but resolves to
-  # `<repo>/../SoplexFFI` (non-existent) when the repo is built as
-  # its own root. Replacing the path-reconstruction hack with a
-  # contract owned by `kim-em/soplex-ffi` is the follow-up.
+  # Standalone Windows build. `SoplexFFI`'s build needs `MINGW_PREFIX`
+  # to stage its vendored archives, so every step that reaches `lake`
+  # must run under the MSYS2 MINGW64 shell; `defaults.run.shell` does
+  # that for any step that does not override it.
   windows:
     name: Windows (MSYS2 / mingw-w64)
     runs-on: windows-latest
@@ -74,7 +71,6 @@ jobs:
             git
             unzip
       - name: Install elan and Lean toolchain
-        shell: bash
         run: |
           set -e
           export USERPROFILE="$(cygpath -w "$HOME")"
@@ -88,8 +84,7 @@ jobs:
           # honor lean-toolchain
           elan toolchain install $(cat lean-toolchain)
           lean --version
-      - name: Build (expected red until the Lake path contract lands)
-        shell: bash
+      - name: Build
         run: |
           set -e
           export PATH="$(paste -sd: .elan-path):$PATH"
