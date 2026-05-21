@@ -70,17 +70,20 @@ jobs:
             mingw-w64-x86_64-boost
             git
             unzip
+      # `elan-init.exe` is a Windows binary; install it from Git Bash where
+      # `HOME == USERPROFILE` (under MSYS2 they diverge and the installer
+      # picks the wrong target dir). `.elan-path` is portable text, read
+      # back in the MSYS2 shell at build time.
       - name: Install elan and Lean toolchain
+        shell: bash
         run: |
           set -e
-          export USERPROFILE="$(cygpath -w "$HOME")"
           curl -sSfL https://github.com/leanprover/elan/releases/latest/download/elan-x86_64-pc-windows-msvc.zip -o elan-init.zip
           unzip -q elan-init.zip
           MSYS2_ARG_CONV_EXCL="*" ./elan-init.exe -y --default-toolchain none --no-modify-path
           ELAN_DIR_MSYS="$(cygpath -u "$USERPROFILE")/.elan"
           echo "$ELAN_DIR_MSYS/bin" > .elan-path
-          echo "$MINGW_PREFIX/bin" >> .elan-path
-          export PATH="$ELAN_DIR_MSYS/bin:$MINGW_PREFIX/bin:$PATH"
+          export PATH="$ELAN_DIR_MSYS/bin:$PATH"
           # honor lean-toolchain
           elan toolchain install $(cat lean-toolchain)
           lean --version
