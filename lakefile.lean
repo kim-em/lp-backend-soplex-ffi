@@ -32,7 +32,11 @@ def sanitizerArgs : Array String :=
   else
     #[]
 
-def soplexFFIRoot : FilePath := __dir__ / defaultPackagesDir / "SoplexFFI"
+-- Lake dedupes packages at the workspace root, so when `LPBackendSoplexFFI`
+-- is consumed as a transitive dependency, `SoplexFFI` is checked out as a
+-- sibling under `<workspace>/.lake/packages/SoplexFFI`, *not* nested under
+-- this package's own `.lake/packages/`. Reach it via `..`.
+def soplexFFIRoot : FilePath := __dir__ / ".." / "SoplexFFI"
 
 def soplexFFIRuntimeLinkArgs : Array String :=
   if System.Platform.isOSX then
