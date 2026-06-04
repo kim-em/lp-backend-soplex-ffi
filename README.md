@@ -1,6 +1,6 @@
 # LPBackendSoplexFFI
 
-[![Lean](https://img.shields.io/badge/Lean-4.29.1-blue.svg)](./lean-toolchain)
+[![Lean](https://img.shields.io/badge/Lean-4.31.0--rc1-blue.svg)](./lean-toolchain)
 [![License](https://img.shields.io/github/license/kim-em/lp-backend-soplex-ffi.svg)](./LICENSE)
 
 `LPBackend` adapter for the SoPlex FFI binding. Wraps the
@@ -21,8 +21,8 @@ specifically without the full `kim-em/soplex` tactic surface (e.g.
 to register the backend in your own Lake project that wires the
 verifier and tactic differently).
 
-This is the only package in the `kim-em/lean-soplex` family besides
-`soplex-ffi` itself that carries `moreLinkArgs` — the SoPlex C++
+This is the only package in the `kim-em/soplex` family besides
+`soplex-ffi` itself that carries `moreLinkArgs`: the SoPlex C++
 runtime link args propagate to anything that links this library.
 
 ## Quickstart
