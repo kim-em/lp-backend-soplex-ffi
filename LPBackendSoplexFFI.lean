@@ -5,6 +5,9 @@
   so existing callers keep working unchanged. Self-registers the
   FFI backend with the `lp-tactic` registry on import.
 -/
+module
 
-import LPBackendSoplexFFI.Adapter
-import LPBackendSoplexFFI.Driver
+public import LPBackendSoplexFFI.Adapter
+public import LPBackendSoplexFFI.Driver
+
+@[expose] public section
