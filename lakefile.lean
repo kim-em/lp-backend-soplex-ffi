@@ -11,10 +11,10 @@ open System Lake DSL
 -/
 
 require LPCore from git "https://github.com/kim-em/lp-core" @
-  "8b694db5f88c65b06714de5488edefd238185f60"
+  "66ac782a11ba2f8c2d3b4ad446000cf20b3f39b7"
 
 require LPTactic from git "https://github.com/kim-em/lp-tactic" @
-  "1f67bd79223e988a7bef32b8c075963f3c32036c"
+  "809fd8a09506213e50b6198dd6261166f4d78b54"
 
 require SoplexFFI from git "https://github.com/kim-em/soplex-ffi" @
   "ab4cd2751c15b4459a659ff10b5a255a193f19d2"
