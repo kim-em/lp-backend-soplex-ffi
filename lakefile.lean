@@ -3,21 +3,21 @@ open System Lake DSL
 
 /-! # `LPBackendSoplexFFI` build configuration
 
-  The `LPBackend` adapter for `kim-em/soplex-ffi`. This is the only
+  The `LPBackend` adapter for `leanprover/soplex-ffi`. This is the only
   package besides `soplex-ffi` itself that carries `moreLinkArgs`.
 
   Self-registers under priority 10 ("FFI band") on import via an
   `initialize` block that calls `LPTactic.registerBackend`.
 -/
 
-require LPCore from git "https://github.com/kim-em/lp-core" @
-  "66ac782a11ba2f8c2d3b4ad446000cf20b3f39b7"
+require LPCore from git "https://github.com/leanprover/lp-core" @
+  "70ca150585f8439a830374b5bec602d391addbc9"
 
-require LPTactic from git "https://github.com/kim-em/lp-tactic" @
-  "809fd8a09506213e50b6198dd6261166f4d78b54"
+require LPTactic from git "https://github.com/leanprover/lp-tactic" @
+  "3f1309f8f3cda3c1f67a0af70eb68eb5836f38fa"
 
-require SoplexFFI from git "https://github.com/kim-em/soplex-ffi" @
-  "ab4cd2751c15b4459a659ff10b5a255a193f19d2"
+require SoplexFFI from git "https://github.com/leanprover/soplex-ffi" @
+  "0849137dd4d7ad68edb9c616a6e9f9a7625be529"
 
 def sanitizerEnabled : Bool :=
   match get_config? sanitize with
@@ -44,7 +44,7 @@ from `__dir__`.
 The previous lakefile assumed exactly one layout — that `SoplexFFI`
 was always our sibling at `__dir__/../SoplexFFI`. That holds when this
 package is a transitive git-dependency under another workspace (e.g.
-`kim-em/soplex`), where Lake checks both packages out under the
+`leanprover/lp`), where Lake checks both packages out under the
 meta-workspace root's `.lake/packages/`. It does **not** hold when
 this package builds as its own workspace root (the standalone CI
 added in 47d8258), where `SoplexFFI` is instead fetched under our
@@ -69,7 +69,7 @@ Known limitations (Lake configurations not covered):
 
 Neither case is exercised by the CI jobs this PR is targeting
 (standalone build of this repo on Windows; consumption from
-`kim-em/soplex` via a git `require`). A more robust long-term fix is
+`leanprover/lp` via a git `require`). A more robust long-term fix is
 to push the MinGW archives into `SoplexFFI`'s `extern_lib`s and let
 Lake's `LeanExe.recBuildExe` propagate them via `transDeps.externLibs`
 to consuming executables, which would eliminate the need for this

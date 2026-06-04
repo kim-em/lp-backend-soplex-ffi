@@ -1,27 +1,31 @@
 # LPBackendSoplexFFI
 
 [![Lean](https://img.shields.io/badge/Lean-4.31.0--rc1-blue.svg)](./lean-toolchain)
-[![License](https://img.shields.io/github/license/kim-em/lp-backend-soplex-ffi.svg)](./LICENSE)
+[![License](https://img.shields.io/github/license/leanprover/lp-backend-soplex-ffi.svg)](./LICENSE)
+
+> **New here? Start at [`leanprover/lp`](https://github.com/leanprover/lp)** — the entry
+> point for the `lp` / `maximize` tactics and the verified LP solver. This repository is one
+> package of that family: the SoPlex FFI backend adapter (priority 10, the default).
 
 `LPBackend` adapter for the SoPlex FFI binding. Wraps the
-synchronous `Soplex.solveExact` from
-[`kim-em/soplex-ffi`](https://github.com/kim-em/soplex-ffi) into
+synchronous `LP.solveExact` from
+[`leanprover/soplex-ffi`](https://github.com/leanprover/soplex-ffi) into
 the abstract `LPBackend` record defined in
-[`kim-em/lp-core`](https://github.com/kim-em/lp-core), and
+[`leanprover/lp-core`](https://github.com/leanprover/lp-core), and
 self-registers with the
-[`kim-em/lp-tactic`](https://github.com/kim-em/lp-tactic) registry
+[`leanprover/lp-tactic`](https://github.com/leanprover/lp-tactic) registry
 under priority 10 ("FFI band") on import.
 
 This is the production-grade native backend for the `by lp` tactic
 — what the meta-package
-[`kim-em/soplex`](https://github.com/kim-em/soplex) defaults to when
+[`leanprover/lp`](https://github.com/leanprover/lp) defaults to when
 no `set_option lp.backend` or per-call argument overrides it.
 Depend on this repo directly only when you want the SoPlex FFI
-specifically without the full `kim-em/soplex` tactic surface (e.g.
+specifically without the full `leanprover/lp` tactic surface (e.g.
 to register the backend in your own Lake project that wires the
 verifier and tactic differently).
 
-This is the only package in the `kim-em/soplex` family besides
+This is the only package in the `leanprover/lp` family besides
 `soplex-ffi` itself that carries `moreLinkArgs`: the SoPlex C++
 runtime link args propagate to anything that links this library.
 
@@ -29,7 +33,7 @@ runtime link args propagate to anything that links this library.
 
 ```lean
 require LPBackendSoplexFFI from git
-  "https://github.com/kim-em/lp-backend-soplex-ffi" @ "main"
+  "https://github.com/leanprover/lp-backend-soplex-ffi" @ "main"
 ```
 
 ```lean
@@ -42,7 +46,7 @@ example (a b : Rat) (_ : 2 * a + b ≤ 5) (_ : a - b ≤ 1) :
 
 ## Build
 
-System dependencies (same as `kim-em/soplex-ffi`):
+System dependencies (same as `leanprover/soplex-ffi`):
 
 | Platform | Packages |
 |----------|----------|
@@ -58,9 +62,9 @@ LPBackendSoplexFFI/Adapter.lean
                                # def backend : LPBackend + initialize registerBackend
 ```
 
-The adapter lives under `namespace Soplex.Backend.SoplexFFI`,
+The adapter lives under `namespace LP.Backend.SoplexFFI`,
 matching the namespace used before the split. Consumers writing
-`Soplex.Backend.SoplexFFI.backend` resolve to the same value
+`LP.Backend.SoplexFFI.backend` resolve to the same value
 regardless of which package owns it.
 
 ## Licence
