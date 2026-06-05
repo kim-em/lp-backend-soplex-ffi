@@ -13,11 +13,14 @@
   verifier-only-without-SoPlex consumer can depend on `lp-verify` and
   `lp-tactic` and never link the SoPlex runtime.
 -/
+module
 
-import LPCore.Validate
-import LPVerify
-import SoplexFFI.Basic
-import LPTactic.Basic
+public import LPCore.Validate
+public import LPVerify
+public import SoplexFFI.Basic
+public import LPTactic.Basic
+
+@[expose] public section
 
 namespace LP
 

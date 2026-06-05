@@ -6,10 +6,13 @@
   itself with the process-global registry from `leanprover/lp-tactic`
   under priority 10 (FFI band) on import.
 -/
+module
 
-import LPCore.Backend
-import LPTactic.Registry
-import SoplexFFI.Basic
+public import LPCore.Backend
+public import LPTactic.Registry
+public import SoplexFFI.Basic
+
+@[expose] public section
 
 namespace LP.Backend.SoplexFFI
 

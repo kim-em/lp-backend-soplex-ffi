@@ -10,14 +10,11 @@ open System Lake DSL
   `initialize` block that calls `LPTactic.registerBackend`.
 -/
 
-require LPCore from git "https://github.com/leanprover/lp-core" @
-  "70ca150585f8439a830374b5bec602d391addbc9"
+require LPCore from git "https://github.com/leanprover/lp-core" @ "54ab1470e0a7c9b6fa3cfd676500db361560db43"
 
-require LPTactic from git "https://github.com/leanprover/lp-tactic" @
-  "7ea556ad4d2bbd8d9d3e790cfb05206bd7f24d91"
+require LPTactic from git "https://github.com/leanprover/lp-tactic" @ "1ae6c2912967f7841f3fd0d9a5d6a73e079b9e0c"
 
-require SoplexFFI from git "https://github.com/leanprover/soplex-ffi" @
-  "0849137dd4d7ad68edb9c616a6e9f9a7625be529"
+require SoplexFFI from git "https://github.com/leanprover/soplex-ffi" @ "cbd7e1e65d7d2877705127d6835bbf459dd822a9"
 
 def sanitizerEnabled : Bool :=
   match get_config? sanitize with
