@@ -14,7 +14,7 @@ require LPCore from git "https://github.com/leanprover/lp-core" @ "96d003f40ada9
 
 require LPTactic from git "https://github.com/leanprover/lp-tactic" @ "008252423f29f152cdd3bc4224897dadfab23be7"
 
-require SoplexFFI from git "https://github.com/leanprover/soplex-ffi" @ "18a2f366482fcb4f3c6418f60f1558493c5148a8"
+require SoplexFFI from git "https://github.com/leanprover/soplex-ffi" @ "fe3422e0ba791b4e865dd828084bfc3633748086"
 
 def sanitizerEnabled : Bool :=
   match get_config? sanitize with
