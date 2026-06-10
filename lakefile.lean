@@ -59,6 +59,15 @@ def soplexFFIRoot : FilePath :=
   else
     here / defaultPackagesDir / "SoplexFFI"
 
+/-- The Lean toolchain's own `lib` directory, passed by CI as
+    `-KleanLibDir=...` (`$(lean --print-prefix)/lib`). Used by the
+    sanitizer lane to put the toolchain libc++ ahead of the
+    `-L/usr/lib*` dirs that lane needs. -/
+def leanLibDirArgs : Array String :=
+  match get_config? leanLibDir with
+  | some d => #[s!"-L{d}"]
+  | none => #[]
+
 def soplexFFIRuntimeLinkArgs : Array String :=
   if System.Platform.isOSX then
     #[]
@@ -72,11 +81,26 @@ def soplexFFIRuntimeLinkArgs : Array String :=
       "-lgcc_s",
       "-lmingwex",
       "-lmsvcrt"]
-  else
+  else if sanitizerEnabled then
+    -- Sanitizer lane: the ASan runtime link needs the `-L/usr/lib*`
+    -- dirs, but those also hold Ubuntu's `libc++.so`; keep the
+    -- toolchain lib dir FIRST so `-lc++` binds to the toolchain's.
+    leanLibDirArgs ++
     #["-L/usr/lib/x86_64-linux-gnu",
       "-L/usr/lib/aarch64-linux-gnu",
       "-L/usr/lib64",
       "-L/usr/lib"] ++ sanitizerArgs
+  else
+    -- Default Linux lane: do NOT add `-L/usr/lib*`. Those dirs hold
+    -- Ubuntu's libc++, and a command-line `-L` is searched before the
+    -- toolchain's own lib dir, shadowing the toolchain libc++ for
+    -- `-lc++`. Ubuntu's libc++ 18 lacks the C++20 symbols
+    -- (`std::__1::__hash_memory`, `__atomic_wait_native`) that
+    -- toolchain-built `libleanrt.a`/`libleancpp.a` reference, which
+    -- breaks executable links (dynlibs tolerate the unresolved
+    -- symbols; exes do not). GMP resolves via the toolchain clang's
+    -- default search dirs. Mirrors `leanprover/lp`'s lakefile.
+    #[]
 
 package LPBackendSoplexFFI where
   moreLinkArgs := soplexFFIRuntimeLinkArgs
