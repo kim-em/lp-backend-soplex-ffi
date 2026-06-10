@@ -10,11 +10,11 @@ open System Lake DSL
   `initialize` block that calls `LPTactic.registerBackend`.
 -/
 
-require LPCore from git "https://github.com/leanprover/lp-core" @ "54ab1470e0a7c9b6fa3cfd676500db361560db43"
+require LPCore from git "https://github.com/leanprover/lp-core" @ "96d003f40ada9c730ae9fe100716214273be651b"
 
-require LPTactic from git "https://github.com/leanprover/lp-tactic" @ "1ae6c2912967f7841f3fd0d9a5d6a73e079b9e0c"
+require LPTactic from git "https://github.com/leanprover/lp-tactic" @ "008252423f29f152cdd3bc4224897dadfab23be7"
 
-require SoplexFFI from git "https://github.com/leanprover/soplex-ffi" @ "cbd7e1e65d7d2877705127d6835bbf459dd822a9"
+require SoplexFFI from git "https://github.com/leanprover/soplex-ffi" @ "18a2f366482fcb4f3c6418f60f1558493c5148a8"
 
 def sanitizerEnabled : Bool :=
   match get_config? sanitize with
@@ -38,40 +38,15 @@ directory of the resolved `SoplexFFI` dependency before any build
 target runs. Lake exposes no config-eval API for that, so we infer it
 from `__dir__`.
 
-The previous lakefile assumed exactly one layout — that `SoplexFFI`
-was always our sibling at `__dir__/../SoplexFFI`. That holds when this
-package is a transitive git-dependency under another workspace (e.g.
-`leanprover/lp`), where Lake checks both packages out under the
-meta-workspace root's `.lake/packages/`. It does **not** hold when
-this package builds as its own workspace root (the standalone CI
-added in 47d8258), where `SoplexFFI` is instead fetched under our
-own `.lake/packages/`. The original code broke Windows CI in the
-standalone case.
-
-We discriminate the two layouts by inspecting `__dir__`'s tail: if
-our parent dir is named `packages` and our grandparent is `.lake`,
-this package was fetched into `<workspace>/.lake/packages/<us>` and
-we're transitive; otherwise we treat ourselves as the workspace root.
-
-Known limitations (Lake configurations not covered):
-
-* **Local path dependencies.** If a meta-workspace requires this
-  checkout via `from "/some/local/path"`, `__dir__` is `/some/local/path`
-  and the heuristic falls through to the standalone branch — but
-  `SoplexFFI` lives at the meta-workspace's `.lake/packages/SoplexFFI`,
-  not under our local checkout.
-* **Custom `packagesDir`.** A workspace can override Lake's default
-  `.lake/packages` via `WorkspaceConfig.packagesDir`. With a non-default
-  name, the parent-component check no longer fires.
-
-Neither case is exercised by the CI jobs this PR is targeting
-(standalone build of this repo on Windows; consumption from
-`leanprover/lp` via a git `require`). A more robust long-term fix is
-to push the MinGW archives into `SoplexFFI`'s `extern_lib`s and let
-Lake's `LeanExe.recBuildExe` propagate them via `transDeps.externLibs`
-to consuming executables, which would eliminate the need for this
-package to know `SoplexFFI`'s directory at all. See issue #1 for
-discussion. -/
+Two supported layouts, discriminated by `__dir__`'s tail: fetched
+into `<workspace>/.lake/packages/<us>` (transitive git dependency,
+e.g. under `leanprover/lp` — `SoplexFFI` is then our sibling), or
+building as the workspace root (`SoplexFFI` is under our own
+`.lake/packages/`). Not covered: local path dependencies and a
+custom `WorkspaceConfig.packagesDir`. The long-term fix is for
+`SoplexFFI` to carry the MinGW archives in its `extern_lib`s so
+consumers never need its directory; see
+https://github.com/leanprover/lp-backend-soplex-ffi/issues/1. -/
 def soplexFFIRoot : FilePath :=
   let here : FilePath := __dir__
   let parent? : Option FilePath := FilePath.parent here
@@ -83,6 +58,15 @@ def soplexFFIRoot : FilePath :=
     here / ".." / "SoplexFFI"
   else
     here / defaultPackagesDir / "SoplexFFI"
+
+/-- The Lean toolchain's own `lib` directory, passed by CI as
+    `-KleanLibDir=...` (`$(lean --print-prefix)/lib`). Used by the
+    sanitizer lane to put the toolchain libc++ ahead of the
+    `-L/usr/lib*` dirs that lane needs. -/
+def leanLibDirArgs : Array String :=
+  match get_config? leanLibDir with
+  | some d => #[s!"-L{d}"]
+  | none => #[]
 
 def soplexFFIRuntimeLinkArgs : Array String :=
   if System.Platform.isOSX then
@@ -97,11 +81,26 @@ def soplexFFIRuntimeLinkArgs : Array String :=
       "-lgcc_s",
       "-lmingwex",
       "-lmsvcrt"]
-  else
+  else if sanitizerEnabled then
+    -- Sanitizer lane: the ASan runtime link needs the `-L/usr/lib*`
+    -- dirs, but those also hold Ubuntu's `libc++.so`; keep the
+    -- toolchain lib dir FIRST so `-lc++` binds to the toolchain's.
+    leanLibDirArgs ++
     #["-L/usr/lib/x86_64-linux-gnu",
       "-L/usr/lib/aarch64-linux-gnu",
       "-L/usr/lib64",
       "-L/usr/lib"] ++ sanitizerArgs
+  else
+    -- Default Linux lane: do NOT add `-L/usr/lib*`. Those dirs hold
+    -- Ubuntu's libc++, and a command-line `-L` is searched before the
+    -- toolchain's own lib dir, shadowing the toolchain libc++ for
+    -- `-lc++`. Ubuntu's libc++ 18 lacks the C++20 symbols
+    -- (`std::__1::__hash_memory`, `__atomic_wait_native`) that
+    -- toolchain-built `libleanrt.a`/`libleancpp.a` reference, which
+    -- breaks executable links (dynlibs tolerate the unresolved
+    -- symbols; exes do not). GMP resolves via the toolchain clang's
+    -- default search dirs. Mirrors `leanprover/lp`'s lakefile.
+    #[]
 
 package LPBackendSoplexFFI where
   moreLinkArgs := soplexFFIRuntimeLinkArgs
@@ -115,3 +114,11 @@ lean_lib LPBackendSoplexFFI where
   -- Force `SoplexFFI`'s native build before this library's modules
   -- link; matches the same edge the meta-package carried pre-split.
   needs := #[BuildKey.packageTarget `SoplexFFI `soplexffi]
+
+/-- Behavioral smoke tests: probe + real solves through both
+    `LP.solveVerified` and `solveVerifiedWith backend`, asserting the
+    two drivers agree (they intentionally share semantics but not
+    code — `solveVerified` stays synchronous / `Except`-typed). -/
+@[test_driver]
+lean_exe «smoke-tests» where
+  root := `LPBackendSoplexFFITest.Smoke
