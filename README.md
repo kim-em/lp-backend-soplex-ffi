@@ -60,6 +60,8 @@ System dependencies (same as `leanprover/soplex-ffi`):
 LPBackendSoplexFFI.lean        # top-level import
 LPBackendSoplexFFI/Adapter.lean
                                # def backend : LPBackend + initialize registerBackend
+LPBackendSoplexFFI/Driver.lean # LP.solveVerified (synchronous verified-solve driver)
+LPBackendSoplexFFITest/        # `lake test` smoke + driver-parity suite
 ```
 
 The adapter lives under `namespace LP.Backend.SoplexFFI`,

@@ -29,6 +29,7 @@ jobs:
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
       - run: lean --version
       - run: lake build
+      - run: lake test
 
   macos:
     name: macOS
@@ -44,6 +45,7 @@ jobs:
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
       - run: lean --version
       - run: lake build
+      - run: lake test
 
   # Standalone Windows build. `SoplexFFI`'s build needs `MINGW_PREFIX`
   # to stage its vendored archives, so every step that reaches `lake`
@@ -92,3 +94,8 @@ jobs:
           set -e
           export PATH="$(paste -sd: .elan-path):$PATH"
           lake build
+      - name: Test
+        run: |
+          set -e
+          export PATH="$(paste -sd: .elan-path):$PATH"
+          lake test
