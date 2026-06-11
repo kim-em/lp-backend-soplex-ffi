@@ -14,7 +14,7 @@ require LPCore from git "https://github.com/leanprover/lp-core" @ "96d003f40ada9
 
 require LPTactic from git "https://github.com/leanprover/lp-tactic" @ "008252423f29f152cdd3bc4224897dadfab23be7"
 
-require SoplexFFI from git "https://github.com/leanprover/soplex-ffi" @ "fe3422e0ba791b4e865dd828084bfc3633748086"
+require SoplexFFI from git "https://github.com/leanprover/soplex-ffi" @ "424d30121596ad4003fcfd0d0bd264e54867b2d3"
 
 def sanitizerEnabled : Bool :=
   match get_config? sanitize with
@@ -73,14 +73,26 @@ def soplexFFIRuntimeLinkArgs : Array String :=
     #[]
   else if System.Platform.isWindows then
     let mingwLibDir := soplexFFIRoot / "vendor" / "mingw-libs"
+    -- The Lean toolchain's `crt2.o` references `_gnu_exception_handler` and
+    -- `__mingw_oldexcpt_handler` — mingw-w64 CRT compatibility symbols that
+    -- recent MSYS2 packages (mid-2026) stopped exporting from `libmingw32.a`,
+    -- so `ld.lld` reports them as undefined when linking any Lean executable
+    -- on Windows. `SoplexFFI`'s `stageMingwLibs` compiles a tiny pass-through
+    -- stub (`mingw_crt_handler_stub.o`) next to the staged MSYS2 archives;
+    -- naming it here resolves the link. See
+    -- https://github.com/leanprover/lp/issues/170.
     #["-Wl,--allow-multiple-definition",
+      s!"-L{mingwLibDir}",
+      (mingwLibDir / "mingw_crt_handler_stub.o").toString,
+      "-Wl,--start-group",
       (mingwLibDir / "libstdc++.a").toString,
       (mingwLibDir / "libgmpxx.a").toString,
       (mingwLibDir / "libgmp.a").toString,
-      s!"-L{mingwLibDir}",
+      "-lmingw32",
       "-lgcc_s",
       "-lmingwex",
-      "-lmsvcrt"]
+      "-lmsvcrt",
+      "-Wl,--end-group"]
   else if sanitizerEnabled then
     -- Sanitizer lane: the ASan runtime link needs the `-L/usr/lib*`
     -- dirs, but those also hold Ubuntu's `libc++.so`; keep the
