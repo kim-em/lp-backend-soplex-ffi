@@ -12,9 +12,9 @@ open System Lake DSL
 
 require LPCore from git "https://github.com/leanprover/lp-core" @ "96d003f40ada9c730ae9fe100716214273be651b"
 
-require LPTactic from git "https://github.com/leanprover/lp-tactic" @ "008252423f29f152cdd3bc4224897dadfab23be7"
+require LPTactic from git "https://github.com/leanprover/lp-tactic" @ "722ea67c6011141b36135b19e7306fa6fd055a47"
 
-require SoplexFFI from git "https://github.com/leanprover/soplex-ffi" @ "424d30121596ad4003fcfd0d0bd264e54867b2d3"
+require SoplexFFI from git "https://github.com/leanprover/soplex-ffi" @ "be185e2be82134d5fc95efb931f194c27ca4629b"
 
 def sanitizerEnabled : Bool :=
   match get_config? sanitize with
